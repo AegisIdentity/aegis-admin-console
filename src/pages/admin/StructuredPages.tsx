@@ -1,21 +1,5 @@
 import { FeaturePage } from '../../components/FeaturePage';
 
-export function AuthPolicies() {
-  return (
-    <FeaturePage
-      title="Authentication Policies"
-      description="Decide how strongly users must prove who they are."
-      capabilities={[
-        'Password policy (Argon2id parameters, length, rotation)',
-        'MFA: WebAuthn passkeys and TOTP, required or step-up',
-        'Sign-on rules by app, group, network, and risk',
-        'Session lifetime and token TTLs per tenant',
-      ]}
-      backend="Password + lockout are enforced today by identity-service; MFA orchestration is owned by mfa-webauthn-service (scaffold)."
-    />
-  );
-}
-
 export function Branding() {
   return (
     <FeaturePage

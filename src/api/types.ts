@@ -104,3 +104,15 @@ export interface Tenant {
   primaryDomain?: string;
   status: 'ACTIVE' | 'SUSPENDED';
 }
+
+export interface AuthPolicy {
+  passwordMinLength: number;
+  passwordRequireUppercase: boolean;
+  passwordRequireLowercase: boolean;
+  passwordRequireDigit: boolean;
+  passwordRequireSymbol: boolean;
+  lockoutThreshold: number;
+  lockoutDurationMinutes: number;
+  mfaRequired: boolean;
+  sessionTtlMinutes: number;
+}

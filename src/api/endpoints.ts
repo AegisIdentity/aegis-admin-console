@@ -1,6 +1,7 @@
 import { api, publicApi } from './client';
 import type {
   Application,
+  AuthPolicy,
   CreateGroupRequest,
   CreateProviderRequest,
   CreateUserRequest,
@@ -138,4 +139,10 @@ export const registerApi = {
   // Public (no token): a tenant's end-user self-registers. Succeeds only if the org opted in.
   register: (body: RegisterRequest) =>
     publicApi.post<{ tenant: string; username: string }>('/api/v1/signup', body).then((r) => r.data),
+};
+
+/** The tenant's authentication policy (password rules, lockout, MFA, session TTL). */
+export const authPolicyApi = {
+  get: () => api.get<AuthPolicy>('/api/v1/auth-policy').then((r) => r.data),
+  update: (body: AuthPolicy) => api.put<AuthPolicy>('/api/v1/auth-policy', body).then((r) => r.data),
 };
