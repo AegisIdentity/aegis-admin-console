@@ -1,0 +1,105 @@
+:root {
+  --aegis-primary: #3b5bdb;
+  --aegis-navy: #0f1b3d;
+  --aegis-bg: #f4f6fb;
+  --aegis-border: #e6e9f2;
+  --aegis-text-muted: #64748b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--aegis-bg);
+  color: #1e2532;
+  -webkit-font-smoothing: antialiased;
+}
+
+.aegis-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.aegis-sidebar-logo {
+  color: #fff;
+  font-size: 18px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aegis-page {
+  padding: 24px 28px;
+  max-width: 1200px;
+}
+
+.aegis-page-header {
+  margin-bottom: 20px;
+}
+
+.aegis-page-header h1 {
+  font-size: 22px;
+  margin: 0 0 4px;
+  font-weight: 700;
+}
+
+.aegis-page-header p {
+  margin: 0;
+  color: var(--aegis-text-muted);
+}
+
+.aegis-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.aegis-signin-wrap {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 860px) {
+  .aegis-signin-wrap {
+    grid-template-columns: 1fr;
+  }
+  .aegis-signin-brandpane {
+    display: none;
+  }
+}
+
+.aegis-signin-brandpane {
+  background: linear-gradient(160deg, #0f1b3d 0%, #24347a 100%);
+  color: #fff;
+  padding: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.aegis-signin-formpane {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.aegis-signin-card {
+  width: 100%;
+  max-width: 380px;
+}
