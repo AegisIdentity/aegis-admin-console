@@ -47,12 +47,44 @@ export interface ServiceApplicationCreated {
   scopes: string[];
 }
 
+export type ProviderProtocol = 'OIDC' | 'OAUTH2' | 'SAML';
+
 export interface IdentityProvider {
   id: string;
-  name: string;
-  protocol: 'SOCIAL_OIDC' | 'SAML' | 'OIDC';
-  vendor: string;
+  alias: string;
+  providerKey: string;
+  protocol: ProviderProtocol;
+  displayName: string;
   enabled: boolean;
+  clientId?: string;
+  scopes?: string;
+  issuerUri?: string;
+  samlMetadataUrl?: string;
+  hasSecret: boolean;
+}
+
+/** A supported provider preset; the console renders the "add provider" form from these. */
+export interface ProviderCatalogEntry {
+  key: string;
+  displayName: string;
+  protocol: ProviderProtocol;
+  defaultScopes?: string;
+  requiredFields: string[];
+  notes?: string;
+}
+
+export interface CreateProviderRequest {
+  providerKey: string;
+  alias: string;
+  displayName?: string;
+  clientId?: string;
+  clientSecret?: string;
+  scopes?: string;
+  userNameAttribute?: string;
+  issuerUri?: string;
+  providerDirectory?: string;
+  samlMetadataUrl?: string;
+  samlEntityId?: string;
 }
 
 export interface SystemLogEvent {

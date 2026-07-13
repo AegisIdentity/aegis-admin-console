@@ -2,9 +2,11 @@ import { api, publicApi } from './client';
 import type {
   Application,
   CreateGroupRequest,
+  CreateProviderRequest,
   CreateUserRequest,
   Group,
   IdentityProvider,
+  ProviderCatalogEntry,
   ServiceApplicationCreated,
   SystemLogEvent,
   Tenant,
@@ -73,6 +75,17 @@ export const idpApi = {
       .catch(() => ({ data: [] as IdentityProvider[] }));
     return res.data;
   },
+  catalog: async (): Promise<ProviderCatalogEntry[]> => {
+    const res = await api
+      .get<ProviderCatalogEntry[]>('/api/v1/identity-providers/catalog')
+      .catch(() => ({ data: [] as ProviderCatalogEntry[] }));
+    return res.data;
+  },
+  create: (body: CreateProviderRequest) =>
+    api.post<IdentityProvider>('/api/v1/identity-providers', body).then((r) => r.data),
+  update: (id: string, body: { enabled?: boolean; displayName?: string; scopes?: string; clientSecret?: string }) =>
+    api.put<IdentityProvider>(`/api/v1/identity-providers/${id}`, body).then((r) => r.data),
+  remove: (id: string) => api.delete<void>(`/api/v1/identity-providers/${id}`).then((r) => r.data),
 };
 
 export const logsApi = {

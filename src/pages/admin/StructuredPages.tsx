@@ -1,21 +1,5 @@
 import { FeaturePage } from '../../components/FeaturePage';
 
-export function IdentityProviders() {
-  return (
-    <FeaturePage
-      title="Identity Providers"
-      description="Let your users sign in with an external identity provider."
-      capabilities={[
-        'Social login: Google, Microsoft, Apple, GitHub, Facebook',
-        'Corporate federation: inbound SAML 2.0 and OIDC',
-        'Just-in-time provisioning and account linking into your directory',
-        'Per-tenant provider configuration (client id/secret, metadata)',
-      ]}
-      backend="Owned by social-broker-service (scaffold). Inbound SAML/OIDC brokering + social sign-in are the next build-out."
-    />
-  );
-}
-
 export function AuthPolicies() {
   return (
     <FeaturePage
