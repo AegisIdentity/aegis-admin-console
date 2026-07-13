@@ -1,7 +1,9 @@
 import { api } from './client';
 import type {
   Application,
+  CreateGroupRequest,
   CreateUserRequest,
+  Group,
   IdentityProvider,
   SystemLogEvent,
   Tenant,
@@ -15,14 +17,29 @@ import type {
  */
 
 export const usersApi = {
-  // (pending backend: identity-service currently exposes get-by-id + authenticate; a list endpoint
-  // is a small addition.) Returns [] on 404 so the UI shows an empty state rather than an error.
   list: async (): Promise<User[]> => {
     const res = await api.get<User[]>('/api/v1/users').catch(() => ({ data: [] as User[] }));
     return res.data;
   },
   get: (id: string) => api.get<User>(`/api/v1/users/${id}`).then((r) => r.data),
   create: (body: CreateUserRequest) => api.post<User>('/api/v1/users', body).then((r) => r.data),
+  disable: (id: string) => api.post<User>(`/api/v1/users/${id}/disable`).then((r) => r.data),
+  enable: (id: string) => api.post<User>(`/api/v1/users/${id}/enable`).then((r) => r.data),
+  remove: (id: string) => api.delete<void>(`/api/v1/users/${id}`).then((r) => r.data),
+};
+
+export const groupsApi = {
+  list: async (): Promise<Group[]> => {
+    const res = await api.get<Group[]>('/api/v1/groups').catch(() => ({ data: [] as Group[] }));
+    return res.data;
+  },
+  create: (body: CreateGroupRequest) => api.post<Group>('/api/v1/groups', body).then((r) => r.data),
+  remove: (id: string) => api.delete<void>(`/api/v1/groups/${id}`).then((r) => r.data),
+  members: (id: string) => api.get<User[]>(`/api/v1/groups/${id}/members`).then((r) => r.data),
+  addMember: (id: string, userId: string) =>
+    api.post<void>(`/api/v1/groups/${id}/members`, { userId }).then((r) => r.data),
+  removeMember: (id: string, userId: string) =>
+    api.delete<void>(`/api/v1/groups/${id}/members/${userId}`).then((r) => r.data),
 };
 
 export const appsApi = {
@@ -32,6 +49,9 @@ export const appsApi = {
       .catch(() => ({ data: [] as Application[] }));
     return res.data;
   },
+  create: (body: { name: string; redirectUri: string }) =>
+    api.post<Application>('/api/v1/applications', body).then((r) => r.data),
+  remove: (id: string) => api.delete<void>(`/api/v1/applications/${id}`).then((r) => r.data),
 };
 
 export const idpApi = {

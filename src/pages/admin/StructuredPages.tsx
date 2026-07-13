@@ -1,20 +1,5 @@
 import { FeaturePage } from '../../components/FeaturePage';
 
-export function Groups() {
-  return (
-    <FeaturePage
-      title="Groups"
-      description="Organize users and drive access and policy assignment by group."
-      capabilities={[
-        'Create groups and assign members',
-        'Map external directory / SCIM groups to Aegis groups',
-        'Use group membership in application assignment and authentication policies',
-      ]}
-      backend="Groups are modeled in identity-service; the group CRUD API is on the roadmap (SERVICE-CATALOG.md)."
-    />
-  );
-}
-
 export function IdentityProviders() {
   return (
     <FeaturePage

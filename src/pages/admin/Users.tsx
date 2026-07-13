@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Form, Input, Modal, Table, Tag, message } from 'antd';
+import { Button, Form, Input, Modal, Popconfirm, Space, Table, Tag, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { PageHeader } from '../../components/PageHeader';
@@ -13,23 +13,13 @@ const statusColor: Record<User['status'], string> = {
   LOCKED: 'red',
 };
 
-const columns: ColumnsType<User> = [
-  { title: 'Username', dataIndex: 'username', key: 'username' },
-  { title: 'Email', dataIndex: 'email', key: 'email' },
-  {
-    title: 'Status',
-    dataIndex: 'status',
-    key: 'status',
-    render: (s: User['status']) => <Tag color={statusColor[s]}>{s}</Tag>,
-  },
-];
-
 export function Users() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form] = Form.useForm<CreateUserRequest>();
 
   const users = useQuery({ queryKey: ['users'], queryFn: usersApi.list });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['users'] });
 
   const create = useMutation({
     mutationFn: (body: CreateUserRequest) => usersApi.create(body),
@@ -37,10 +27,64 @@ export function Users() {
       message.success('User created');
       setOpen(false);
       form.resetFields();
-      void qc.invalidateQueries({ queryKey: ['users'] });
+      void invalidate();
     },
     onError: () => message.error('Could not create user (is the identity-service reachable?)'),
   });
+
+  const setStatus = useMutation({
+    mutationFn: ({ id, enable }: { id: string; enable: boolean }) =>
+      enable ? usersApi.enable(id) : usersApi.disable(id),
+    onSuccess: (_d, v) => {
+      message.success(v.enable ? 'User enabled' : 'User disabled');
+      void invalidate();
+    },
+    onError: () => message.error('Update failed'),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => usersApi.remove(id),
+    onSuccess: () => {
+      message.success('User deleted');
+      void invalidate();
+    },
+    onError: () => message.error('Delete failed'),
+  });
+
+  const columns: ColumnsType<User> = [
+    { title: 'Username', dataIndex: 'username', key: 'username' },
+    { title: 'Email', dataIndex: 'email', key: 'email' },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (s: User['status']) => <Tag color={statusColor[s]}>{s}</Tag>,
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      align: 'right',
+      render: (_t, u) => (
+        <Space>
+          {u.status === 'ACTIVE' ? (
+            <Button size="small" onClick={() => setStatus.mutate({ id: u.id, enable: false })}>
+              Disable
+            </Button>
+          ) : (
+            <Button size="small" onClick={() => setStatus.mutate({ id: u.id, enable: true })}>
+              Enable
+            </Button>
+          )}
+          <Popconfirm title="Delete this user?" okText="Delete" okButtonProps={{ danger: true }}
+            onConfirm={() => remove.mutate(u.id)}>
+            <Button size="small" danger type="text">
+              Delete
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -77,11 +121,7 @@ export function Users() {
           <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
             <Input autoComplete="off" />
           </Form.Item>
-          <Form.Item
-            name="password"
-            label="Temporary password"
-            rules={[{ required: true, min: 8 }]}
-          >
+          <Form.Item name="password" label="Temporary password" rules={[{ required: true, min: 8 }]}>
             <Input.Password autoComplete="new-password" />
           </Form.Item>
         </Form>

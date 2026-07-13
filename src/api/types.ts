@@ -14,6 +14,18 @@ export interface CreateUserRequest {
   password: string;
 }
 
+export interface Group {
+  id: string;
+  name: string;
+  description?: string;
+  memberCount: number;
+}
+
+export interface CreateGroupRequest {
+  name: string;
+  description?: string;
+}
+
 export interface Application {
   id: string;
   name: string;

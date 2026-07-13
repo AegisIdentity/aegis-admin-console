@@ -13,5 +13,8 @@ export const config = {
   redirectUri: `${window.location.origin}/callback`,
   postLogoutRedirectUri: `${window.location.origin}/signin`,
   /** Scopes the console requests. */
-  scope: 'openid profile identity:users:read identity:users:write tenant:read tenant:admin',
+  scope:
+    'openid profile identity:users:read identity:users:write ' +
+    'identity:groups:read identity:groups:write ' +
+    'tenant:read tenant:admin applications:admin',
 } as const;

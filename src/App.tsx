@@ -6,12 +6,12 @@ import { Callback } from './auth/Callback';
 import { SignIn } from './pages/SignIn';
 import { Dashboard } from './pages/admin/Dashboard';
 import { Users } from './pages/admin/Users';
+import { Groups } from './pages/admin/Groups';
 import { Applications } from './pages/admin/Applications';
 import { SystemLog } from './pages/admin/SystemLog';
 import {
   AuthPolicies,
   Branding,
-  Groups,
   IdentityProviders,
   Settings,
 } from './pages/admin/StructuredPages';
