@@ -5,17 +5,14 @@ import { RequireAuth } from './auth/RequireAuth';
 import { Callback } from './auth/Callback';
 import { SignIn } from './pages/SignIn';
 import { SignUp } from './pages/SignUp';
+import { Register } from './pages/Register';
 import { Dashboard } from './pages/admin/Dashboard';
 import { Users } from './pages/admin/Users';
 import { Groups } from './pages/admin/Groups';
 import { Applications } from './pages/admin/Applications';
 import { SystemLog } from './pages/admin/SystemLog';
-import {
-  AuthPolicies,
-  Branding,
-  IdentityProviders,
-  Settings,
-} from './pages/admin/StructuredPages';
+import { Settings } from './pages/admin/Settings';
+import { AuthPolicies, Branding, IdentityProviders } from './pages/admin/StructuredPages';
 import { MyApps, Profile, Security } from './pages/portal/PortalPages';
 
 export function App() {
@@ -23,6 +20,7 @@ export function App() {
     <Routes>
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/callback" element={<Callback />} />
 
       <Route element={<RequireAuth />}>

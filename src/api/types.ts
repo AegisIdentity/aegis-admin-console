@@ -30,10 +30,21 @@ export interface Application {
   id: string;
   name: string;
   clientId: string;
-  type: 'OIDC' | 'SAML';
+  type: 'OIDC' | 'SAML' | 'SERVICE';
   grantTypes: string[];
+  scopes: string[];
   redirectUris: string[];
   status: 'ACTIVE' | 'INACTIVE';
+}
+
+/** One-time result of creating a service (M2M) app. The secret is shown only at creation. */
+export interface ServiceApplicationCreated {
+  id: string;
+  name: string;
+  clientId: string;
+  clientSecret: string;
+  tenant: string;
+  scopes: string[];
 }
 
 export interface IdentityProvider {

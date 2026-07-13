@@ -5,10 +5,20 @@ import type {
   CreateUserRequest,
   Group,
   IdentityProvider,
+  ServiceApplicationCreated,
   SystemLogEvent,
   Tenant,
   User,
 } from './types';
+
+/** Scopes a tenant may grant to its own service (M2M) clients — mirrors the server allowlist. */
+export const GRANTABLE_SERVICE_SCOPES = [
+  'identity:users:read',
+  'identity:users:write',
+  'identity:groups:read',
+  'identity:groups:write',
+  'tenant:read',
+] as const;
 
 /**
  * Typed API modules. Endpoints marked "(pending backend)" are called against the intended contract
@@ -51,6 +61,8 @@ export const appsApi = {
   },
   create: (body: { name: string; redirectUri: string }) =>
     api.post<Application>('/api/v1/applications', body).then((r) => r.data),
+  createService: (body: { name: string; scopes: string[] }) =>
+    api.post<ServiceApplicationCreated>('/api/v1/applications/service', body).then((r) => r.data),
   remove: (id: string) => api.delete<void>(`/api/v1/applications/${id}`).then((r) => r.data),
 };
 
@@ -88,4 +100,29 @@ export const onboardingApi = {
   // Public (no token): bootstraps a new org's first admin.
   signup: (body: OnboardRequest) =>
     publicApi.post<{ tenant: string; adminUsername: string }>('/api/v1/onboarding', body).then((r) => r.data),
+};
+
+export interface SignupPolicy {
+  tenant: string;
+  signupEnabled: boolean;
+}
+
+export interface RegisterRequest {
+  tenantSlug: string;
+  username: string;
+  email: string;
+  password: string;
+}
+
+/** The tenant admin's self-service sign-up policy (authenticated; tenant is derived from the token). */
+export const signupPolicyApi = {
+  get: () => api.get<SignupPolicy>('/api/v1/signup-policy').then((r) => r.data),
+  set: (enabled: boolean) =>
+    api.put<SignupPolicy>('/api/v1/signup-policy', { enabled }).then((r) => r.data),
+};
+
+export const registerApi = {
+  // Public (no token): a tenant's end-user self-registers. Succeeds only if the org opted in.
+  register: (body: RegisterRequest) =>
+    publicApi.post<{ tenant: string; username: string }>('/api/v1/signup', body).then((r) => r.data),
 };

@@ -46,18 +46,3 @@ export function Branding() {
     />
   );
 }
-
-export function Settings() {
-  return (
-    <FeaturePage
-      title="Settings"
-      description="Organization, domains, and API access."
-      capabilities={[
-        'Organization profile and custom domains (verified CNAME)',
-        'Admin roles (RBAC) and admin API tokens',
-        'SCIM provisioning connectors (inbound / outbound)',
-      ]}
-      backend="Tenant + domains are live in tenant-service; admin RBAC and API tokens are owned by admin-api-service (scaffold)."
-    />
-  );
-}
