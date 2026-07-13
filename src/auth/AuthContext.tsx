@@ -1,5 +1,7 @@
 import { createContext, use, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { message } from 'antd';
 import type { User } from 'oidc-client-ts';
+import { config } from '../config';
 import { userManager } from './userManager';
 
 export interface AuthContextValue {
@@ -50,7 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (profile?.sub as string) ??
         'Signed-in user',
       tenant: (profile?.tenant as string | undefined) ?? null,
-      login: () => void userManager.signinRedirect(),
+      login: () => {
+        // signinRedirect first fetches OIDC metadata (cross-origin); surface failures instead of
+        // silently doing nothing (usual causes: authorization-server not running, or CORS not enabled).
+        userManager.signinRedirect().catch((e: unknown) => {
+          void message.error(
+            `Couldn't start sign-in. Is the authorization-server running and reachable at ${config.oidcAuthority}?`,
+          );
+          console.error('signinRedirect failed', e);
+        });
+      },
       logout: () => void userManager.signoutRedirect(),
     };
   }, [user, isLoading]);
