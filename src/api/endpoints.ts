@@ -2,6 +2,7 @@ import { api, publicApi } from './client';
 import type {
   Application,
   AuthPolicy,
+  Branding,
   CreateGroupRequest,
   CreateProviderRequest,
   CreateUserRequest,
@@ -145,4 +146,10 @@ export const registerApi = {
 export const authPolicyApi = {
   get: () => api.get<AuthPolicy>('/api/v1/auth-policy').then((r) => r.data),
   update: (body: AuthPolicy) => api.put<AuthPolicy>('/api/v1/auth-policy', body).then((r) => r.data),
+};
+
+/** The tenant's sign-in branding (product name, heading, subtitle, primary color). */
+export const brandingApi = {
+  get: () => api.get<Branding>('/api/v1/branding').then((r) => r.data),
+  update: (body: Branding) => api.put<Branding>('/api/v1/branding', body).then((r) => r.data),
 };

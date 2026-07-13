@@ -14,7 +14,7 @@ import { SystemLog } from './pages/admin/SystemLog';
 import { Settings } from './pages/admin/Settings';
 import { IdentityProviders } from './pages/admin/IdentityProviders';
 import { AuthPolicies } from './pages/admin/AuthPolicies';
-import { Branding } from './pages/admin/StructuredPages';
+import { Branding } from './pages/admin/Branding';
 import { MyApps, Profile, Security } from './pages/portal/PortalPages';
 
 export function App() {

@@ -105,6 +105,14 @@ export interface Tenant {
   status: 'ACTIVE' | 'SUSPENDED';
 }
 
+export interface Branding {
+  tenant?: string;
+  productName: string;
+  signInHeading: string;
+  signInSubtitle: string;
+  primaryColor: string;
+}
+
 export interface AuthPolicy {
   passwordMinLength: number;
   passwordRequireUppercase: boolean;
