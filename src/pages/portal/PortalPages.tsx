@@ -1,8 +1,10 @@
 import { Card, Descriptions, Empty } from 'antd';
 import { AppstoreOutlined } from '@ant-design/icons';
 import { PageHeader } from '../../components/PageHeader';
-import { FeaturePage } from '../../components/FeaturePage';
 import { useAuth } from '../../auth/AuthContext';
+
+// The Security page is a full self-service surface (TOTP, passkeys, password) — its own module.
+export { Security } from './Security';
 
 /** End-user app dashboard — the "chiclets" a signed-in user launches. Assignments come from the
  * directory once the assignment API is wired; illustrative tiles are shown meanwhile. */
@@ -67,18 +69,3 @@ export function Profile() {
   );
 }
 
-export function Security() {
-  return (
-    <FeaturePage
-      title="Security"
-      description="Manage how you sign in and protect your account."
-      capabilities={[
-        'Register a passkey (WebAuthn/FIDO2) for passwordless sign-in',
-        'Set up an authenticator app (TOTP) as a second factor',
-        'Review active sessions and sign out everywhere',
-        'Change your password',
-      ]}
-      backend="Passkeys and TOTP are owned by mfa-webauthn-service (scaffold); password change is served by identity-service."
-    />
-  );
-}

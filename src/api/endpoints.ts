@@ -8,10 +8,13 @@ import type {
   CreateUserRequest,
   Group,
   IdentityProvider,
+  MfaFactors,
+  Passkey,
   ProviderCatalogEntry,
   ServiceApplicationCreated,
   SystemLogEvent,
   Tenant,
+  TotpEnrollment,
   User,
 } from './types';
 
@@ -152,4 +155,38 @@ export const authPolicyApi = {
 export const brandingApi = {
   get: () => api.get<Branding>('/api/v1/branding').then((r) => r.data),
   update: (body: Branding) => api.put<Branding>('/api/v1/branding', body).then((r) => r.data),
+};
+
+/**
+ * Self-service MFA (mfa-webauthn-service). Every call operates on the signed-in user's own subject
+ * (taken server-side from the token), so no ids are passed for the caller.
+ */
+export const mfaApi = {
+  factors: () => api.get<MfaFactors>('/api/v1/mfa/factors').then((r) => r.data),
+  enrollTotp: () => api.post<TotpEnrollment>('/api/v1/mfa/totp/enroll').then((r) => r.data),
+  verifyTotp: (code: string) => api.post<void>('/api/v1/mfa/totp/verify', { code }).then((r) => r.data),
+  removeTotp: () => api.delete<void>('/api/v1/mfa/totp').then((r) => r.data),
+  passkeyOptions: () =>
+    api.post<PublicKeyCredentialCreationOptionsJSON>('/api/v1/mfa/webauthn/register/options').then((r) => r.data),
+  passkeyFinish: (body: { attestationObject: string; clientDataJSON: string; label?: string }) =>
+    api.post<Passkey>('/api/v1/mfa/webauthn/register/finish', body).then((r) => r.data),
+  removePasskey: (id: string) => api.delete<void>(`/api/v1/mfa/webauthn/${id}`).then((r) => r.data),
+};
+
+/** The raw creation options the server returns (base64url fields), passed to the WebAuthn helper. */
+export interface PublicKeyCredentialCreationOptionsJSON {
+  challenge: string;
+  rp: { id: string; name: string };
+  user: { id: string; name: string; displayName: string };
+  pubKeyCredParams: { type: string; alg: number }[];
+  timeout?: number;
+  attestation?: string;
+  authenticatorSelection?: Record<string, string>;
+  excludeCredentials?: { type: string; id: string }[];
+}
+
+/** The signed-in user changing their own password (identity-service). */
+export const accountApi = {
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post<void>('/api/v1/users/me/password', { currentPassword, newPassword }).then((r) => r.data),
 };

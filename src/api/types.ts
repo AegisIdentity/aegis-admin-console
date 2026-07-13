@@ -87,14 +87,36 @@ export interface CreateProviderRequest {
   samlEntityId?: string;
 }
 
+/** An audit event as returned by identity-service's /api/v1/system-log (newest first). */
 export interface SystemLogEvent {
   id: string;
-  at: string;
-  type: string;
-  action: string;
-  outcome: 'SUCCESS' | 'FAILURE' | 'DENIED';
+  tenantId: string;
   actor: string;
-  target?: string;
+  /** e.g. USER_CREATED, AUTH_SUCCESS, AUTH_FAILURE, PASSWORD_CHANGED, POLICY_UPDATED. */
+  action: string;
+  target?: string | null;
+  detail?: string | null;
+  createdAt: string;
+}
+
+/** A caller's enrolled MFA factors (mfa-webauthn-service). */
+export interface MfaFactors {
+  totp: { enabled: boolean; createdAt: string; lastUsedAt?: string | null } | null;
+  passkeys: Passkey[];
+}
+
+export interface Passkey {
+  id: string;
+  label: string;
+  aaguid?: string | null;
+  createdAt: string;
+  lastUsedAt?: string | null;
+}
+
+/** The TOTP enrolment challenge: the shared secret and the otpauth URI to render as a QR code. */
+export interface TotpEnrollment {
+  secret: string;
+  otpauthUri: string;
 }
 
 export interface Tenant {

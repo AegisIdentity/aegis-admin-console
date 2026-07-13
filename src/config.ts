@@ -12,9 +12,11 @@ export const config = {
   /** OIDC redirect targets (must be registered on the client). */
   redirectUri: `${window.location.origin}/callback`,
   postLogoutRedirectUri: `${window.location.origin}/signin`,
-  /** Scopes the console requests. */
+  /** Scopes the console requests. Must be a subset of what the aegis-dev-spa client is allowed to
+   *  request in the authorization-server. `idp:admin` is required by the Identity Providers page;
+   *  self-service MFA and password change operate on the token subject and need no extra scope. */
   scope:
     'openid profile identity:users:read identity:users:write ' +
     'identity:groups:read identity:groups:write ' +
-    'tenant:read tenant:admin applications:admin',
+    'tenant:read tenant:admin applications:admin idp:admin',
 } as const;
