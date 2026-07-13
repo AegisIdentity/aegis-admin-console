@@ -1,6 +1,6 @@
 import { Button, Card, Typography } from 'antd';
 import { LoginOutlined, SafetyCertificateTwoTone } from '@ant-design/icons';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 const { Title, Paragraph, Text } = Typography;
@@ -52,7 +52,10 @@ export function SignIn() {
           >
             Sign in with Aegis
           </Button>
-          <Paragraph type="secondary" style={{ textAlign: 'center', marginTop: 20, marginBottom: 0, fontSize: 12 }}>
+          <Paragraph type="secondary" style={{ textAlign: 'center', marginTop: 18, marginBottom: 0 }}>
+            New organization? <Link to="/signup">Create one</Link>
+          </Paragraph>
+          <Paragraph type="secondary" style={{ textAlign: 'center', marginTop: 8, marginBottom: 0, fontSize: 12 }}>
             Protected by OAuth 2.1 · authorization_code + PKCE
           </Paragraph>
         </Card>

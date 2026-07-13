@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, publicApi } from './client';
 import type {
   Application,
   CreateGroupRequest,
@@ -74,4 +74,18 @@ export const logsApi = {
 
 export const tenantApi = {
   get: (slug: string) => api.get<Tenant>(`/api/v1/tenants/${slug}`).then((r) => r.data),
+};
+
+export interface OnboardRequest {
+  organizationName: string;
+  tenantSlug: string;
+  adminUsername: string;
+  adminEmail: string;
+  adminPassword: string;
+}
+
+export const onboardingApi = {
+  // Public (no token): bootstraps a new org's first admin.
+  signup: (body: OnboardRequest) =>
+    publicApi.post<{ tenant: string; adminUsername: string }>('/api/v1/onboarding', body).then((r) => r.data),
 };

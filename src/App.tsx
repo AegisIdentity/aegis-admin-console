@@ -4,6 +4,7 @@ import { PortalLayout } from './components/PortalLayout';
 import { RequireAuth } from './auth/RequireAuth';
 import { Callback } from './auth/Callback';
 import { SignIn } from './pages/SignIn';
+import { SignUp } from './pages/SignUp';
 import { Dashboard } from './pages/admin/Dashboard';
 import { Users } from './pages/admin/Users';
 import { Groups } from './pages/admin/Groups';
@@ -21,6 +22,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/signin" element={<SignIn />} />
+      <Route path="/signup" element={<SignUp />} />
       <Route path="/callback" element={<Callback />} />
 
       <Route element={<RequireAuth />}>
