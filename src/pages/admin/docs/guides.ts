@@ -151,7 +151,7 @@ export const GUIDES: Guide[] = [
       'Native social: get an id_token from the provider\'s native SDK → POST /api/v1/social/native (provider alias + id_token) → interaction_code.',
       'Swap it: POST /api/v1/oauth/interaction/token with the interaction_code + your PKCE code_verifier → Aegis access + id tokens.',
     ],
-    note: 'These endpoints are on the issuer host with permissive CORS; they are bearer/code-based (no cookies).',
+    note: 'These endpoints are reached through the platform gateway with permissive CORS; they are bearer/code-based (no cookies). Tokens from the exchange carry your per-tenant issuer.',
   },
   {
     id: 'combining',

@@ -4,7 +4,10 @@
  *    social, passkey and SAML on the hosted login with no per-mechanism code.
  *  - "Embedded / Backend": the tenant's app runs the ceremony itself, or a backend calls the APIs.
  *
- * Samples are backtick-free so they embed cleanly. ISSUER = your Aegis issuer host, GATEWAY = the API gateway.
+ * Samples are backtick-free so they embed cleanly. Placeholders substituted at render time, per tenant:
+ *   https://ISSUER  = the organization's issuer THROUGH the gateway (https://GATEWAY/{tenant-slug})
+ *   https://GATEWAY = the platform's edge gateway (management + tenant-app endpoints)
+ *   acme-           = client-id prefix, replaced with the signed-in organization's slug
  */
 
 export type Lang = 'TypeScript' | 'Python' | 'Java' | 'Go';
@@ -32,7 +35,7 @@ export const RECIPES: Recipe[] = [
         "import { UserManager } from 'oidc-client-ts';",
         '',
         'const mgr = new UserManager({',
-        "  authority: 'https://ISSUER',            // your Aegis issuer (or https://ISSUER/{tenant})",
+        "  authority: 'https://ISSUER',            // your organization's issuer (via the gateway)",
         "  client_id: 'acme-web',",
         "  redirect_uri: window.location.origin + '/callback',",
         "  response_type: 'code',                   // authorization_code + PKCE (automatic)",
@@ -75,7 +78,7 @@ export const RECIPES: Recipe[] = [
         '    oauth2:',
         '      client:',
         '        provider:',
-        '          aegis: { issuer-uri: https://ISSUER }        # or https://ISSUER/{tenant}',
+        '          aegis: { issuer-uri: https://ISSUER }        # your org issuer (via the gateway)',
         '        registration:',
         '          aegis:',
         '            client-id: acme-web',
@@ -210,13 +213,13 @@ export const RECIPES: Recipe[] = [
     category: 'Embedded (your app runs it)',
     audience: "Tenant's own web app",
     intro:
-      'Run the WebAuthn ceremony in your app and swap the result for Aegis tokens. Configure your Relying Party first (Security → Passkeys: rpId + origins). The interaction-code endpoints are on the issuer with permissive CORS.',
+      'Run the WebAuthn ceremony in your app and swap the result for Aegis tokens. Configure your Relying Party first (Security → Passkeys: rpId + origins). The endpoints are reached through the gateway with permissive CORS.',
     code: {
       TypeScript: [
-        "const ISSUER = 'https://ISSUER', clientId = 'acme-web';",
+        "const GATEWAY = 'https://GATEWAY', clientId = 'acme-web';",
         '',
         '// 1) options',
-        "const opt = await (await fetch(ISSUER + '/api/v1/webauthn/login/options', {",
+        "const opt = await (await fetch(GATEWAY + '/api/v1/webauthn/login/options', {",
         "  method: 'POST', headers: { 'Content-Type': 'application/json' },",
         '  body: JSON.stringify({ clientId }),',
         '})).json();',
@@ -230,7 +233,7 @@ export const RECIPES: Recipe[] = [
         '',
         '// 3) finish -> interaction_code (PKCE)',
         'const codeVerifier = randomVerifier();',
-        "const fin = await (await fetch(ISSUER + '/api/v1/webauthn/login/finish', {",
+        "const fin = await (await fetch(GATEWAY + '/api/v1/webauthn/login/finish', {",
         "  method: 'POST', headers: { 'Content-Type': 'application/json' },",
         '  body: JSON.stringify({ clientId, codeChallenge: await s256(codeVerifier),',
         '    challengeId: opt.challengeId, credentialId: cred.id,',
@@ -240,10 +243,10 @@ export const RECIPES: Recipe[] = [
         '})).json();',
         '',
         '// 4) swap the interaction_code for tokens',
-        "const tokens = await (await fetch(ISSUER + '/api/v1/oauth/interaction/token', {",
+        "const tokens = await (await fetch(GATEWAY + '/api/v1/oauth/interaction/token', {",
         "  method: 'POST', headers: { 'Content-Type': 'application/json' },",
         '  body: JSON.stringify({ clientId, interaction_code: fin.interaction_code, code_verifier: codeVerifier }),',
-        '})).json();  // { access_token, id_token, ... }',
+        '})).json();  // { access_token, id_token, ... }  (iss = your per-tenant issuer)',
       ].join('\n'),
     },
   },
@@ -256,45 +259,45 @@ export const RECIPES: Recipe[] = [
       'Your app gets an id_token from the provider native SDK (Sign in with Apple / Google), exchanges it for an interaction_code, then swaps that for Aegis tokens. The two POSTs (below) are the exchange; the id_token comes from the native SDK.',
     code: {
       TypeScript: [
-        "const ISSUER = 'https://ISSUER', clientId = 'acme-mobile';",
+        "const GATEWAY = 'https://GATEWAY', clientId = 'acme-mobile';",
         'const codeVerifier = randomVerifier();',
         '',
         '// 1) provider id_token (from the native Google/Apple SDK) -> interaction_code',
-        "const sx = await (await fetch(ISSUER + '/api/v1/social/native', {",
+        "const sx = await (await fetch(GATEWAY + '/api/v1/social/native', {",
         "  method: 'POST', headers: { 'Content-Type': 'application/json' },",
         "  body: JSON.stringify({ clientId, provider: 'google', idToken: providerIdToken,",
         '    codeChallenge: await s256(codeVerifier) }),',
         '})).json();',
         '',
         '// 2) interaction_code -> Aegis tokens',
-        "const tokens = await (await fetch(ISSUER + '/api/v1/oauth/interaction/token', {",
+        "const tokens = await (await fetch(GATEWAY + '/api/v1/oauth/interaction/token', {",
         "  method: 'POST', headers: { 'Content-Type': 'application/json' },",
         '  body: JSON.stringify({ clientId, interaction_code: sx.interaction_code, code_verifier: codeVerifier }),',
         '})).json();',
       ].join('\n'),
       Python: [
         'import requests',
-        'ISSUER = "https://ISSUER"',
+        'GATEWAY = "https://GATEWAY"',
         '',
-        'sx = requests.post(ISSUER + "/api/v1/social/native", json={',
+        'sx = requests.post(GATEWAY + "/api/v1/social/native", json={',
         '    "clientId": "acme-mobile", "provider": "google",',
         '    "idToken": provider_id_token, "codeChallenge": s256(code_verifier),',
         '}).json()',
         '',
-        'tokens = requests.post(ISSUER + "/api/v1/oauth/interaction/token", json={',
+        'tokens = requests.post(GATEWAY + "/api/v1/oauth/interaction/token", json={',
         '    "clientId": "acme-mobile", "interaction_code": sx["interaction_code"],',
         '    "code_verifier": code_verifier,',
         '}).json()',
       ].join('\n'),
       Java: [
         'var http = RestClient.create();',
-        'Map<?,?> sx = http.post().uri("https://ISSUER/api/v1/social/native")',
+        'Map<?,?> sx = http.post().uri("https://GATEWAY/api/v1/social/native")',
         '    .contentType(MediaType.APPLICATION_JSON)',
         '    .body(Map.of("clientId","acme-mobile","provider","google",',
         '                 "idToken", providerIdToken, "codeChallenge", s256(codeVerifier)))',
         '    .retrieve().body(Map.class);',
         '',
-        'Map<?,?> tokens = http.post().uri("https://ISSUER/api/v1/oauth/interaction/token")',
+        'Map<?,?> tokens = http.post().uri("https://GATEWAY/api/v1/oauth/interaction/token")',
         '    .contentType(MediaType.APPLICATION_JSON)',
         '    .body(Map.of("clientId","acme-mobile",',
         '                 "interaction_code", sx.get("interaction_code"), "code_verifier", codeVerifier))',
@@ -303,7 +306,7 @@ export const RECIPES: Recipe[] = [
       Go: [
         'post := func(path string, body any) map[string]any {',
         '    b, _ := json.Marshal(body)',
-        '    resp, _ := http.Post("https://ISSUER"+path, "application/json", bytes.NewReader(b))',
+        '    resp, _ := http.Post("https://GATEWAY"+path, "application/json", bytes.NewReader(b))',
         '    var out map[string]any; json.NewDecoder(resp.Body).Decode(&out); return out',
         '}',
         'sx := post("/api/v1/social/native", map[string]any{',

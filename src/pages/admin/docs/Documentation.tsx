@@ -3,6 +3,7 @@ import { Alert, Button, Card, Collapse, Segmented, Space, Tabs, Tag, Typography,
 import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 import { PageHeader } from '../../../components/PageHeader';
 import { config } from '../../../config';
+import { useAuth } from '../../../auth/AuthContext';
 import { API_GROUPS, type ApiGroup, type ApiOperation, type HttpMethod } from './apiSpec';
 import { GUIDES, type Guide } from './guides';
 import { LANGS, RECIPES, type Lang, type Recipe } from './codeSamples';
@@ -17,8 +18,28 @@ const METHOD_COLOR: Record<HttpMethod, string> = {
   DELETE: 'red',
 };
 
-function hostBase(group: ApiGroup): string {
-  return group.host === 'issuer' ? config.oidcAuthority : config.apiBase;
+/**
+ * Everything in the docs is customised to the signed-in organization: the tenant slug comes from the
+ * admin's token, the issuer is the PER-TENANT issuer through the edge gateway
+ * (`<gateway>/<tenant>` — the public front door), and code samples get real URLs + slug-prefixed
+ * client ids substituted in.
+ */
+function useDocsContext() {
+  const { tenant } = useAuth();
+  const slug = tenant ?? '{tenant}';
+  const issuerBase = `${config.apiBase}/${slug}`;
+  /** Substitute the render-time placeholders in a sample or path with this org's real values. */
+  const subst = (text: string): string =>
+    text
+      .split('https://ISSUER').join(issuerBase)
+      .split('https://GATEWAY').join(config.apiBase)
+      .split('{tenant}').join(slug)
+      .split('acme-').join(`${slug}-`);
+  return { slug, issuerBase, gateway: config.apiBase, subst };
+}
+
+function hostBase(group: ApiGroup, issuerBase: string): string {
+  return group.host === 'issuer' ? issuerBase : config.apiBase;
 }
 
 /** Render a guide step, turning `inline code` spans into <Text code>. */
@@ -29,14 +50,14 @@ function renderStep(text: string) {
   );
 }
 
-function OperationRow({ op }: { op: ApiOperation }) {
+function OperationRow({ op, subst }: { op: ApiOperation; subst: (s: string) => string }) {
   return (
     <div style={{ padding: '10px 0', borderBottom: '1px solid #f0f2f7' }}>
       <Space align="start" wrap>
         <Tag color={METHOD_COLOR[op.method]} style={{ fontFamily: 'monospace', minWidth: 58, textAlign: 'center' }}>
           {op.method}
         </Tag>
-        <Text code style={{ fontSize: 13 }}>{op.path}</Text>
+        <Text code style={{ fontSize: 13 }}>{subst(op.path)}</Text>
         <Tag>{op.auth}</Tag>
       </Space>
       <Paragraph type="secondary" style={{ margin: '6px 0 0 66px' }}>{op.summary}</Paragraph>
@@ -45,13 +66,13 @@ function OperationRow({ op }: { op: ApiOperation }) {
           {op.request && (
             <div>
               <Text type="secondary" style={{ fontSize: 12 }}>Request</Text>
-              <pre style={{ background: '#f4f6fb', padding: 10, borderRadius: 6, overflowX: 'auto', fontSize: 12, margin: '2px 0 8px' }}>{op.request}</pre>
+              <pre style={{ background: '#f4f6fb', padding: 10, borderRadius: 6, overflowX: 'auto', fontSize: 12, margin: '2px 0 8px' }}>{subst(op.request)}</pre>
             </div>
           )}
           {op.response && (
             <div>
               <Text type="secondary" style={{ fontSize: 12 }}>Response</Text>
-              <pre style={{ background: '#f4f6fb', padding: 10, borderRadius: 6, overflowX: 'auto', fontSize: 12, margin: '2px 0 0' }}>{op.response}</pre>
+              <pre style={{ background: '#f4f6fb', padding: 10, borderRadius: 6, overflowX: 'auto', fontSize: 12, margin: '2px 0 0' }}>{subst(op.response)}</pre>
             </div>
           )}
         </div>
@@ -61,6 +82,7 @@ function OperationRow({ op }: { op: ApiOperation }) {
 }
 
 function ApiReference() {
+  const { slug, issuerBase, gateway, subst } = useDocsContext();
   const items = API_GROUPS.map((group, i) => ({
     key: String(i),
     label: (
@@ -73,9 +95,9 @@ function ApiReference() {
     children: (
       <>
         <Paragraph type="secondary">{group.description}</Paragraph>
-        <Text type="secondary" style={{ fontSize: 12 }}>Base URL: <Text code copyable>{hostBase(group)}</Text></Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>Base URL: <Text code copyable>{hostBase(group, issuerBase)}</Text></Text>
         <div style={{ marginTop: 8 }}>
-          {group.operations.map((op) => <OperationRow key={op.method + op.path} op={op} />)}
+          {group.operations.map((op) => <OperationRow key={op.method + op.path} op={op} subst={subst} />)}
         </div>
       </>
     ),
@@ -85,11 +107,11 @@ function ApiReference() {
     <>
       <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 12 }} align="start" wrap>
         <Paragraph type="secondary" style={{ maxWidth: 640, marginBottom: 0 }}>
-          Every platform endpoint, grouped by service. Management APIs are reached via the edge gateway
-          (<Text code>{config.apiBase}</Text>); OAuth and tenant-app endpoints are on the issuer
-          (<Text code>{config.oidcAuthority}</Text>).
+          Every endpoint, customised for <Text strong>{slug}</Text> and reached through the platform
+          gateway. Your organization&apos;s OAuth/OIDC issuer is <Text code>{issuerBase}</Text>;
+          management and tenant-app APIs are on the gateway root (<Text code>{gateway}</Text>).
         </Paragraph>
-        <Button icon={<DownloadOutlined />} onClick={downloadOpenApi}>Download OpenAPI 3.0</Button>
+        <Button icon={<DownloadOutlined />} onClick={() => downloadOpenApi(issuerBase)}>Download OpenAPI 3.0</Button>
       </Space>
       <Collapse items={items} defaultActiveKey={['0']} />
     </>
@@ -97,6 +119,7 @@ function ApiReference() {
 }
 
 function Guides() {
+  const { subst } = useDocsContext();
   return (
     <Space direction="vertical" size={16} style={{ display: 'flex' }}>
       {GUIDES.map((g: Guide) => (
@@ -108,21 +131,17 @@ function Guides() {
             </Paragraph>
           )}
           <ol style={{ paddingLeft: 20, margin: 0 }}>
-            {g.steps.map((s, i) => <li key={i} style={{ marginBottom: 6 }}>{renderStep(s)}</li>)}
+            {g.steps.map((s, i) => <li key={i} style={{ marginBottom: 6 }}>{renderStep(subst(s))}</li>)}
           </ol>
-          {g.note && <Alert type="info" showIcon style={{ marginTop: 12 }} message={g.note} />}
+          {g.note && <Alert type="info" showIcon style={{ marginTop: 12 }} message={subst(g.note)} />}
         </Card>
       ))}
     </Space>
   );
 }
 
-/** Substitute the ISSUER/GATEWAY placeholders in a sample with this deployment's real hosts. */
-function subst(code: string): string {
-  return code.split('https://ISSUER').join(config.oidcAuthority).split('https://GATEWAY').join(config.apiBase);
-}
-
 function CodeRecipes() {
+  const { slug, issuerBase, gateway, subst } = useDocsContext();
   const [lang, setLang] = useState<Lang>('TypeScript');
   const categories = ['Built-in (hosted)', 'Embedded (your app runs it)', 'Backend & APIs'] as const;
 
@@ -132,7 +151,7 @@ function CodeRecipes() {
         <Text type="secondary">Language:</Text>
         <Segmented options={[...LANGS]} value={lang} onChange={(v) => setLang(v as Lang)} />
         <Text type="secondary" style={{ fontSize: 12 }}>
-          Hosts are filled in for this deployment (issuer <Text code>{config.oidcAuthority}</Text>, gateway <Text code>{config.apiBase}</Text>).
+          Pre-filled for <Text strong>{slug}</Text>: issuer <Text code>{issuerBase}</Text>, gateway <Text code>{gateway}</Text>.
         </Text>
       </Space>
       {categories.map((cat) => {
@@ -169,6 +188,7 @@ function CodeRecipes() {
 }
 
 export function Documentation() {
+  const { slug } = useDocsContext();
   const [tab, setTab] = useState('api');
   const guideAnchors = useMemo(() => GUIDES.map((g) => g.title).join(', '), []);
 
@@ -176,7 +196,7 @@ export function Documentation() {
     <>
       <PageHeader
         title="Documentation"
-        description="API reference and configuration guides for every auth mechanism on the platform."
+        description={`API reference, configuration guides and code samples — customised for your organization (${slug}).`}
       />
       <Card>
         <Tabs
@@ -201,9 +221,9 @@ export function Documentation() {
               children: (
                 <>
                   <Paragraph type="secondary" style={{ marginTop: 0 }}>
-                    Copy-paste integration recipes in Python, Java, Go and TypeScript — for a tenant's own
-                    web/mobile app, SaaS backend, or a 3rd-party app, and for using the platform's built-in
-                    per-tenant login. Pick a language; hosts are pre-filled for this deployment.
+                    Copy-paste integration recipes in Python, Java, Go and TypeScript — for a tenant&apos;s own
+                    web/mobile app, SaaS backend, or a 3rd-party app, and for using the platform&apos;s built-in
+                    per-tenant login. Pick a language; URLs and client ids are pre-filled for your organization.
                   </Paragraph>
                   <CodeRecipes />
                 </>
@@ -216,8 +236,9 @@ export function Documentation() {
   );
 }
 
-/** Generate a downloadable OpenAPI 3.0 document from the same catalog that drives the reference. */
-function downloadOpenApi() {
+/** Generate a downloadable OpenAPI 3.0 document from the same catalog that drives the reference,
+ *  with this organization's per-tenant issuer (through the gateway) as a server. */
+function downloadOpenApi(issuerBase: string) {
   type Op = { tags: string[]; summary: string; description: string; responses: Record<string, unknown> };
   const paths: Record<string, Record<string, Op>> = {};
   for (const group of API_GROUPS) {
@@ -227,7 +248,7 @@ function downloadOpenApi() {
       entry[op.method.toLowerCase()] = {
         tags: [group.name],
         summary: op.summary,
-        description: `Auth: ${op.auth}. Host: ${group.host === 'issuer' ? config.oidcAuthority : config.apiBase}.`
+        description: `Auth: ${op.auth}. Host: ${group.host === 'issuer' ? issuerBase : config.apiBase}.`
           + (op.request ? `\n\nExample request:\n${op.request}` : '')
           + (op.response ? `\n\nExample response:\n${op.response}` : ''),
         responses: { '200': { description: 'OK' } },
@@ -242,8 +263,8 @@ function downloadOpenApi() {
       description: 'Distributed multi-tenant IAM platform: OAuth2/OIDC, users, MFA/passkeys, social/SAML federation, SCIM, RBAC, custom domains, and the tenant-app embedded auth API.',
     },
     servers: [
-      { url: config.apiBase, description: 'Edge gateway (management APIs)' },
-      { url: config.oidcAuthority, description: 'Issuer / authorization-server (OAuth + tenant-app)' },
+      { url: config.apiBase, description: 'Edge gateway (management + tenant-app APIs)' },
+      { url: issuerBase, description: 'Your organization\'s OAuth/OIDC issuer (per-tenant, via the gateway)' },
     ],
     tags: API_GROUPS.map((g) => ({ name: g.name, description: g.description })),
     paths,

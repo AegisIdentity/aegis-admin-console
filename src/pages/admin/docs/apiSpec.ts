@@ -6,7 +6,8 @@
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-/** Which host serves a group: the edge gateway (management APIs) or the issuer/AS (OAuth + tenant-app). */
+/** Which base URL serves a group: the edge gateway root (management + tenant-app APIs) or the
+ *  organization's per-tenant ISSUER — which is also reached through the gateway, at /{tenant}. */
 export type ApiHost = 'gateway' | 'issuer';
 
 export interface ApiOperation {
@@ -33,7 +34,7 @@ export const API_GROUPS: ApiGroup[] = [
     service: 'authorization-server',
     host: 'issuer',
     description:
-      'Standards endpoints your web/mobile apps use for login (authorization_code + PKCE) and machine-to-machine (client_credentials). Add ?idp_hint=<alias> to /oauth2/authorize to deep-link straight to a social provider.',
+      'Standards endpoints your web/mobile apps use for login (authorization_code + PKCE) and machine-to-machine (client_credentials). The base URL below is YOUR organization\'s issuer, served through the platform gateway — tokens it mints carry this issuer and are signed with your tenant\'s own key. Add ?idp_hint=<alias> to /oauth2/authorize to deep-link straight to a social provider.',
     operations: [
       { method: 'GET', path: '/.well-known/openid-configuration', auth: 'Public', summary: 'OIDC discovery document (endpoints, issuer, jwks_uri).' },
       { method: 'GET', path: '/oauth2/authorize', auth: 'Public (browser redirect)', summary: 'Start authorization_code + PKCE. Params: response_type=code, client_id, redirect_uri, scope, code_challenge, code_challenge_method=S256, state, [idp_hint].' },
@@ -45,9 +46,9 @@ export const API_GROUPS: ApiGroup[] = [
   {
     name: 'Tenant-app embedded auth',
     service: 'authorization-server',
-    host: 'issuer',
+    host: 'gateway',
     description:
-      'For a tenant\'s OWN web/mobile app to run passkey / native-social login itself and receive Aegis tokens. Permissive CORS; the app runs the ceremony, gets a single-use PKCE interaction_code, then swaps it for tokens.',
+      'For a tenant\'s OWN web/mobile app to run passkey / native-social login itself and receive Aegis tokens. Reached through the gateway with permissive CORS; the app runs the ceremony, gets a single-use PKCE interaction_code, then swaps it for tokens whose iss is your per-tenant issuer.',
     operations: [
       { method: 'POST', path: '/api/v1/webauthn/register/options', auth: 'Bearer (the signed-in user)', summary: 'Creation options to enrol a passkey bound to the tenant\'s own rpId.' },
       { method: 'POST', path: '/api/v1/webauthn/register/finish', auth: 'Bearer (the signed-in user)', summary: 'Verify + store the passkey attestation.', request: '{ "attestationObject": "b64url", "clientDataJSON": "b64url", "label": "My iPhone" }' },
