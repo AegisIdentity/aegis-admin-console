@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Alert, Button, Card, Collapse, Space, Tabs, Tag, Typography } from 'antd';
-import { DownloadOutlined } from '@ant-design/icons';
+import { Alert, Button, Card, Collapse, Segmented, Space, Tabs, Tag, Typography, message } from 'antd';
+import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 import { PageHeader } from '../../../components/PageHeader';
 import { config } from '../../../config';
 import { API_GROUPS, type ApiGroup, type ApiOperation, type HttpMethod } from './apiSpec';
 import { GUIDES, type Guide } from './guides';
+import { LANGS, RECIPES, type Lang, type Recipe } from './codeSamples';
 
 const { Text, Paragraph, Title } = Typography;
 
@@ -116,6 +117,57 @@ function Guides() {
   );
 }
 
+/** Substitute the ISSUER/GATEWAY placeholders in a sample with this deployment's real hosts. */
+function subst(code: string): string {
+  return code.split('https://ISSUER').join(config.oidcAuthority).split('https://GATEWAY').join(config.apiBase);
+}
+
+function CodeRecipes() {
+  const [lang, setLang] = useState<Lang>('TypeScript');
+  const categories = ['Built-in (hosted)', 'Embedded (your app runs it)', 'Backend & APIs'] as const;
+
+  return (
+    <>
+      <Space style={{ marginBottom: 12 }} align="center" wrap>
+        <Text type="secondary">Language:</Text>
+        <Segmented options={[...LANGS]} value={lang} onChange={(v) => setLang(v as Lang)} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          Hosts are filled in for this deployment (issuer <Text code>{config.oidcAuthority}</Text>, gateway <Text code>{config.apiBase}</Text>).
+        </Text>
+      </Space>
+      {categories.map((cat) => {
+        const recipes = RECIPES.filter((r: Recipe) => r.category === cat);
+        if (recipes.length === 0) return null;
+        return (
+          <div key={cat} style={{ marginBottom: 20 }}>
+            <Title level={5}>{cat}</Title>
+            <Space direction="vertical" size={16} style={{ display: 'flex' }}>
+              {recipes.map((r) => {
+                const code = r.code[lang];
+                return (
+                  <Card key={r.id} size="small"
+                    title={<Space wrap><Text strong>{r.title}</Text><Tag color="blue">{r.audience}</Tag></Space>}>
+                    <Paragraph type="secondary">{r.intro}</Paragraph>
+                    {code ? (
+                      <div style={{ position: 'relative' }}>
+                        <Button size="small" icon={<CopyOutlined />} style={{ position: 'absolute', right: 8, top: 8, zIndex: 1 }}
+                          onClick={() => { void navigator.clipboard.writeText(subst(code)); message.success('Copied'); }}>Copy</Button>
+                        <pre style={{ background: '#0d1117', color: '#e6edf3', padding: 14, borderRadius: 8, overflowX: 'auto', fontSize: 12.5, lineHeight: 1.55, margin: 0 }}>{subst(code)}</pre>
+                      </div>
+                    ) : (
+                      <Alert type="info" showIcon message="This step runs client-side — see the TypeScript sample." />
+                    )}
+                  </Card>
+                );
+              })}
+            </Space>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export function Documentation() {
   const [tab, setTab] = useState('api');
   const guideAnchors = useMemo(() => GUIDES.map((g) => g.title).join(', '), []);
@@ -140,6 +192,20 @@ export function Documentation() {
                   <Title level={5} style={{ marginTop: 0 }}>Configure each mechanism</Title>
                   <Paragraph type="secondary" style={{ fontSize: 12 }}>{guideAnchors}</Paragraph>
                   <Guides />
+                </>
+              ),
+            },
+            {
+              key: 'code',
+              label: 'Code samples',
+              children: (
+                <>
+                  <Paragraph type="secondary" style={{ marginTop: 0 }}>
+                    Copy-paste integration recipes in Python, Java, Go and TypeScript — for a tenant's own
+                    web/mobile app, SaaS backend, or a 3rd-party app, and for using the platform's built-in
+                    per-tenant login. Pick a language; hosts are pre-filled for this deployment.
+                  </Paragraph>
+                  <CodeRecipes />
                 </>
               ),
             },
