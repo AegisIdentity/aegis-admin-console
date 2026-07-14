@@ -6,6 +6,7 @@ import {
   FileSearchOutlined,
   GlobalOutlined,
   LogoutOutlined,
+  ReadOutlined,
   SafetyOutlined,
   SettingOutlined,
   TeamOutlined,
@@ -44,6 +45,7 @@ const NAV = [
   { key: '/domains', icon: <GlobalOutlined />, label: 'Custom Domains' },
   { key: '/branding', icon: <BgColorsOutlined />, label: 'Branding' },
   { key: '/system-log', icon: <FileSearchOutlined />, label: 'System Log' },
+  { key: '/docs', icon: <ReadOutlined />, label: 'Documentation' },
   { key: '/settings', icon: <SettingOutlined />, label: 'Settings' },
 ];
 

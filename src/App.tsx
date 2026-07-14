@@ -18,6 +18,7 @@ import { Passkeys } from './pages/admin/Passkeys';
 import { AdminRoles } from './pages/admin/AdminRoles';
 import { Provisioning } from './pages/admin/Provisioning';
 import { Domains } from './pages/admin/Domains';
+import { Documentation } from './pages/admin/docs/Documentation';
 import { Branding } from './pages/admin/Branding';
 import { MyApps, Profile, Security } from './pages/portal/PortalPages';
 
@@ -42,6 +43,7 @@ export function App() {
           <Route path="admins" element={<AdminRoles />} />
           <Route path="provisioning" element={<Provisioning />} />
           <Route path="domains" element={<Domains />} />
+          <Route path="docs" element={<Documentation />} />
           <Route path="branding" element={<Branding />} />
           <Route path="system-log" element={<SystemLog />} />
           <Route path="settings" element={<Settings />} />
