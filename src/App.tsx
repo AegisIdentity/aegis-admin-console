@@ -15,6 +15,9 @@ import { Settings } from './pages/admin/Settings';
 import { IdentityProviders } from './pages/admin/IdentityProviders';
 import { AuthPolicies } from './pages/admin/AuthPolicies';
 import { Passkeys } from './pages/admin/Passkeys';
+import { AdminRoles } from './pages/admin/AdminRoles';
+import { Provisioning } from './pages/admin/Provisioning';
+import { Domains } from './pages/admin/Domains';
 import { Branding } from './pages/admin/Branding';
 import { MyApps, Profile, Security } from './pages/portal/PortalPages';
 
@@ -36,6 +39,9 @@ export function App() {
           <Route path="identity-providers" element={<IdentityProviders />} />
           <Route path="policies" element={<AuthPolicies />} />
           <Route path="passkeys" element={<Passkeys />} />
+          <Route path="admins" element={<AdminRoles />} />
+          <Route path="provisioning" element={<Provisioning />} />
+          <Route path="domains" element={<Domains />} />
           <Route path="branding" element={<Branding />} />
           <Route path="system-log" element={<SystemLog />} />
           <Route path="settings" element={<Settings />} />

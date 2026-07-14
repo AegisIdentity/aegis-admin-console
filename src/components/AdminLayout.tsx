@@ -26,6 +26,7 @@ const NAV = [
     children: [
       { key: '/users', label: 'Users' },
       { key: '/groups', label: 'Groups', icon: <UsergroupAddOutlined /> },
+      { key: '/provisioning', label: 'Provisioning (SCIM)' },
     ],
   },
   { key: '/applications', icon: <AppstoreOutlined />, label: 'Applications' },
@@ -37,8 +38,10 @@ const NAV = [
       { key: '/identity-providers', label: 'Identity Providers', icon: <GlobalOutlined /> },
       { key: '/policies', label: 'Authentication Policies' },
       { key: '/passkeys', label: 'Passkeys' },
+      { key: '/admins', label: 'Admins & Roles' },
     ],
   },
+  { key: '/domains', icon: <GlobalOutlined />, label: 'Custom Domains' },
   { key: '/branding', icon: <BgColorsOutlined />, label: 'Branding' },
   { key: '/system-log', icon: <FileSearchOutlined />, label: 'System Log' },
   { key: '/settings', icon: <SettingOutlined />, label: 'Settings' },

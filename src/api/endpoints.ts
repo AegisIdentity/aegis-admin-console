@@ -11,6 +11,12 @@ import type {
   MfaFactors,
   Passkey,
   ProviderCatalogEntry,
+  AdminAssignment,
+  AdminMe,
+  AdminRoleCatalogEntry,
+  CustomDomain,
+  ScimConnector,
+  ScimConnectorCreated,
   ServiceApplicationCreated,
   SystemLogEvent,
   Tenant,
@@ -191,6 +197,46 @@ export interface PublicKeyCredentialCreationOptionsJSON {
 export const accountApi = {
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post<void>('/api/v1/users/me/password', { currentPassword, newPassword }).then((r) => r.data),
+};
+
+/** RBAC admin roles + assignments (admin-api-service). */
+export const rbacApi = {
+  roles: async (): Promise<AdminRoleCatalogEntry[]> => {
+    const res = await api.get<AdminRoleCatalogEntry[]>('/api/v1/admin/roles').catch(() => ({ data: [] }));
+    return res.data;
+  },
+  admins: async (): Promise<AdminAssignment[]> => {
+    const res = await api.get<AdminAssignment[]>('/api/v1/admin/admins').catch(() => ({ data: [] }));
+    return res.data;
+  },
+  setRoles: (subject: string, roles: string[]) =>
+    api.put<AdminAssignment>(`/api/v1/admin/admins/${encodeURIComponent(subject)}`, { roles }).then((r) => r.data),
+  removeAdmin: (subject: string) =>
+    api.delete<void>(`/api/v1/admin/admins/${encodeURIComponent(subject)}`).then((r) => r.data),
+  me: () => api.get<AdminMe>('/api/v1/admin/me').then((r) => r.data),
+};
+
+/** SCIM inbound provisioning connectors (scim-provisioning-service). */
+export const provisioningApi = {
+  connectors: async (): Promise<ScimConnector[]> => {
+    const res = await api.get<ScimConnector[]>('/api/v1/provisioning/connectors').catch(() => ({ data: [] }));
+    return res.data;
+  },
+  createConnector: (name: string) =>
+    api.post<ScimConnectorCreated>('/api/v1/provisioning/connectors', { name }).then((r) => r.data),
+  removeConnector: (id: string) =>
+    api.delete<void>(`/api/v1/provisioning/connectors/${id}`).then((r) => r.data),
+};
+
+/** Custom sign-in domains (tenant-service). */
+export const domainsApi = {
+  list: async (): Promise<CustomDomain[]> => {
+    const res = await api.get<CustomDomain[]>('/api/v1/domains').catch(() => ({ data: [] }));
+    return res.data;
+  },
+  add: (domain: string) => api.post<CustomDomain>('/api/v1/domains', { domain }).then((r) => r.data),
+  verify: (id: string) => api.post<CustomDomain>(`/api/v1/domains/${id}/verify`).then((r) => r.data),
+  remove: (id: string) => api.delete<void>(`/api/v1/domains/${id}`).then((r) => r.data),
 };
 
 /** Per-tenant WebAuthn RP configuration + passkey audit (mfa-webauthn-service, tenant:admin). */

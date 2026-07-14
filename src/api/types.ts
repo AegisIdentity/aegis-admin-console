@@ -142,6 +142,51 @@ export interface WebAuthnAuditEvent {
   at: string;
 }
 
+/** RBAC: a built-in admin role and the permissions it grants. */
+export interface AdminRoleCatalogEntry {
+  role: string;
+  permissions: string[];
+}
+
+/** RBAC: an admin's assigned roles in this tenant. */
+export interface AdminAssignment {
+  subject: string;
+  roles: string[];
+}
+
+/** RBAC: the signed-in admin's effective roles + permissions (drives console UI gating). */
+export interface AdminMe {
+  subject: string;
+  roles: string[];
+  permissions: string[];
+}
+
+/** SCIM: an inbound provisioning connector (upstream IdP pushes users in). */
+export interface ScimConnector {
+  id: string;
+  name: string;
+  enabled: boolean;
+  createdAt: string;
+}
+
+/** SCIM: the one-time response when a connector is created (includes the bearer token). */
+export interface ScimConnectorCreated extends ScimConnector {
+  token: string;
+  scimBaseUrlPath: string;
+}
+
+/** Custom domain: a white-label sign-in host + its DNS setup + verification state. */
+export interface CustomDomain {
+  id: string;
+  domain: string;
+  status: 'PENDING' | 'VERIFIED';
+  verificationToken: string;
+  dnsRecords: {
+    cname: { host: string; target: string };
+    txt: { host: string; value: string };
+  };
+}
+
 export interface Tenant {
   id: string;
   name: string;
