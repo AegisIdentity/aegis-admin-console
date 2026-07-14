@@ -16,6 +16,8 @@ import type {
   Tenant,
   TotpEnrollment,
   User,
+  WebAuthnAuditEvent,
+  WebAuthnRpConfig,
 } from './types';
 
 /** Scopes a tenant may grant to its own service (M2M) clients — mirrors the server allowlist. */
@@ -189,4 +191,17 @@ export interface PublicKeyCredentialCreationOptionsJSON {
 export const accountApi = {
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post<void>('/api/v1/users/me/password', { currentPassword, newPassword }).then((r) => r.data),
+};
+
+/** Per-tenant WebAuthn RP configuration + passkey audit (mfa-webauthn-service, tenant:admin). */
+export const passkeyAdminApi = {
+  getConfig: () => api.get<WebAuthnRpConfig>('/api/v1/mfa/webauthn/config').then((r) => r.data),
+  updateConfig: (body: WebAuthnRpConfig) =>
+    api.put<WebAuthnRpConfig>('/api/v1/mfa/webauthn/config', body).then((r) => r.data),
+  audit: async (): Promise<WebAuthnAuditEvent[]> => {
+    const res = await api
+      .get<WebAuthnAuditEvent[]>('/api/v1/mfa/webauthn/audit')
+      .catch(() => ({ data: [] as WebAuthnAuditEvent[] }));
+    return res.data;
+  },
 };

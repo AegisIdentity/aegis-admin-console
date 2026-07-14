@@ -36,6 +36,7 @@ const NAV = [
     children: [
       { key: '/identity-providers', label: 'Identity Providers', icon: <GlobalOutlined /> },
       { key: '/policies', label: 'Authentication Policies' },
+      { key: '/passkeys', label: 'Passkeys' },
     ],
   },
   { key: '/branding', icon: <BgColorsOutlined />, label: 'Branding' },

@@ -119,6 +119,29 @@ export interface TotpEnrollment {
   otpauthUri: string;
 }
 
+/** Per-tenant WebAuthn (passkey) Relying Party config for the tenant's own apps. */
+export interface WebAuthnRpConfig {
+  rpId: string;
+  rpName: string;
+  origins: string[];
+  userVerification: 'preferred' | 'required' | 'discouraged';
+  authenticatorAttachment: 'platform' | 'cross-platform' | 'any';
+  residentKey: 'required' | 'preferred' | 'discouraged';
+  attestation: 'none' | 'indirect' | 'direct';
+  enabled: boolean;
+}
+
+/** A passkey audit event (registered / authenticated / removed / failed assertion). */
+export interface WebAuthnAuditEvent {
+  id: string;
+  subject: string | null;
+  action: 'PASSKEY_REGISTERED' | 'PASSKEY_AUTHENTICATED' | 'PASSKEY_REMOVED' | 'PASSKEY_ASSERT_FAILED';
+  credentialId: string | null;
+  aaguid: string | null;
+  detail: string | null;
+  at: string;
+}
+
 export interface Tenant {
   id: string;
   name: string;
