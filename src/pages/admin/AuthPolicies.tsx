@@ -1,10 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Card, Form, InputNumber, Space, Switch, Typography, message } from 'antd';
+import { Alert, Button, Card, Checkbox, Form, InputNumber, Space, Switch, Typography, message } from 'antd';
 import { PageHeader } from '../../components/PageHeader';
 import { authPolicyApi } from '../../api/endpoints';
 import type { AuthPolicy } from '../../api/types';
 
 const { Text } = Typography;
+
+const MFA_METHOD_OPTIONS = [
+  { label: 'Authenticator app (TOTP)', value: 'TOTP' },
+  { label: 'Passkey (WebAuthn / FIDO2)', value: 'WEBAUTHN' },
+];
 
 /**
  * Per-tenant authentication policy. Password rules + lockout are enforced by identity-service; MFA
@@ -15,6 +20,7 @@ export function AuthPolicies() {
   const qc = useQueryClient();
   const [form] = Form.useForm<AuthPolicy>();
   const policy = useQuery({ queryKey: ['auth-policy'], queryFn: authPolicyApi.get });
+  const mfaOn = (Form.useWatch('mfaRequired', form) ?? policy.data?.mfaRequired) === true;
 
   const save = useMutation({
     mutationFn: (body: AuthPolicy) => authPolicyApi.update(body),
@@ -71,13 +77,13 @@ export function AuthPolicies() {
 
           <Card title="MFA & session" style={{ marginBottom: 20 }}>
             <Alert
-              type="info"
+              type="success"
               showIcon
               style={{ marginBottom: 16 }}
-              message="Stored now, enforced next"
-              description="MFA requirement and session lifetime are saved per-tenant here; runtime enforcement is owned by the MFA service (WebAuthn/TOTP) and the session layer."
+              message="Enforced at sign-in"
+              description="When Require MFA is on, users are challenged for a second factor after their password (or forced to enrol one) before any token is issued. Choose which factor types are accepted below. Session lifetime is stored per-tenant."
             />
-            <Space size="large" wrap>
+            <Space size="large" wrap align="start">
               <Form.Item name="mfaRequired" label="Require MFA" valuePropName="checked">
                 <Switch />
               </Form.Item>
@@ -85,6 +91,16 @@ export function AuthPolicies() {
                 <InputNumber min={5} max={1440} style={{ width: 120 }} />
               </Form.Item>
             </Space>
+            {mfaOn && (
+              <Form.Item
+                name="mfaMethods"
+                label="Accepted second factors"
+                rules={[{ required: true, type: 'array', min: 1, message: 'Pick at least one factor type' }]}
+                style={{ marginTop: 8 }}
+              >
+                <Checkbox.Group options={MFA_METHOD_OPTIONS} />
+              </Form.Item>
+            )}
           </Card>
 
           <Space>

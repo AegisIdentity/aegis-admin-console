@@ -144,5 +144,7 @@ export interface AuthPolicy {
   lockoutThreshold: number;
   lockoutDurationMinutes: number;
   mfaRequired: boolean;
+  /** Which factor types satisfy the requirement: 'TOTP' and/or 'WEBAUTHN'. */
+  mfaMethods: string[];
   sessionTtlMinutes: number;
 }

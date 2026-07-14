@@ -1,16 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, List, Space, Switch, Tag, Typography, message } from 'antd';
+import { Card, Descriptions, List, Space, Switch, Tag, Typography, message } from 'antd';
 import { PageHeader } from '../../components/PageHeader';
 import { signupPolicyApi } from '../../api/endpoints';
+import { config } from '../../config';
+import { useAuth } from '../../auth/AuthContext';
 
 const { Text, Paragraph } = Typography;
 
 /**
- * Organization settings. Self-service sign-up is a live, tenant-scoped toggle (identity-service);
- * the remaining items name their owning service and are on the roadmap.
+ * Organization settings. Self-service sign-up is a live tenant-scoped toggle (identity-service), and the
+ * Developer card surfaces the OIDC endpoints a tenant needs to connect their own web/mobile apps.
  */
 export function Settings() {
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const tenant = (user?.profile?.tenant as string) ?? '—';
   const policy = useQuery({ queryKey: ['signup-policy'], queryFn: signupPolicyApi.get });
 
   const setEnabled = useMutation({
@@ -22,15 +26,25 @@ export function Settings() {
     onError: () => message.error('Could not update sign-up policy'),
   });
 
+  const iss = config.oidcAuthority;
+  const endpoints: { label: string; value: string }[] = [
+    { label: 'Issuer', value: iss },
+    { label: 'Discovery', value: `${iss}/.well-known/openid-configuration` },
+    { label: 'Authorization', value: `${iss}/oauth2/authorize` },
+    { label: 'Token', value: `${iss}/oauth2/token` },
+    { label: 'JWKS', value: `${iss}/oauth2/jwks` },
+    { label: 'UserInfo', value: `${iss}/userinfo` },
+  ];
+
   const roadmap = [
-    'Organization profile and custom domains (verified CNAME) — tenant-service',
-    'Admin roles (RBAC) and admin API tokens — admin-api-service (scaffold)',
-    'SCIM provisioning connectors (inbound / outbound) — scim-provisioning-service (scaffold)',
+    'Custom domains (verified CNAME) for a fully white-labelled sign-in host — tenant-service',
+    'Admin roles (RBAC) — admin-api-service',
+    'SCIM provisioning connectors (inbound / outbound) — scim-provisioning-service',
   ];
 
   return (
     <>
-      <PageHeader title="Settings" description="Organization, self-service sign-up, domains, and API access." />
+      <PageHeader title="Settings" description="Organization, self-service sign-up, and developer / API access." />
 
       <Card style={{ marginBottom: 24 }}>
         <Space align="start" style={{ width: '100%', justifyContent: 'space-between' }}>
@@ -50,6 +64,26 @@ export function Settings() {
             unCheckedChildren="Off"
           />
         </Space>
+      </Card>
+
+      <Card title="Developer & API access" style={{ marginBottom: 24 }}>
+        <Paragraph type="secondary">
+          Connect your own web or mobile app to this organization. Register the app under{' '}
+          <b>Applications</b> (choose OAuth for a user-facing app, or a service credential for
+          machine-to-machine), then use <b>authorization_code + PKCE</b> against the endpoints below.
+          Your organization identifier is <Text code>{tenant}</Text>.
+        </Paragraph>
+        <Descriptions column={1} size="small" bordered>
+          {endpoints.map((e) => (
+            <Descriptions.Item key={e.label} label={e.label}>
+              <Text copyable style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>{e.value}</Text>
+            </Descriptions.Item>
+          ))}
+        </Descriptions>
+        <Paragraph type="secondary" style={{ marginTop: 12, marginBottom: 0, fontSize: 12 }}>
+          Mobile apps use the same authorization_code + PKCE flow via a system browser
+          (ASWebAuthenticationSession / Chrome Custom Tabs) with a custom-scheme or app-link redirect URI.
+        </Paragraph>
       </Card>
 
       <Card title="On the roadmap">

@@ -3,7 +3,9 @@
  * the local docker-compose stack. Override in `.env.local` or at build/deploy time.
  */
 export const config = {
-  /** The authorization-server issuer (OIDC authority). */
+  /** The authorization-server issuer (OIDC authority). Served on `localhost` (same hostname as this
+   *  console) so that WebAuthn passkeys — whose rpId is the hostname and is port-independent — registered
+   *  in the console also work on the hosted login page. No /etc/hosts entry is needed. */
   oidcAuthority: import.meta.env.VITE_OIDC_AUTHORITY ?? 'http://localhost:9000',
   /** The public SPA client id registered in the authorization-server (aegis-dev-spa). */
   oidcClientId: import.meta.env.VITE_OIDC_CLIENT_ID ?? 'aegis-dev-spa',
