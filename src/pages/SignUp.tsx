@@ -3,9 +3,33 @@ import { useMutation } from '@tanstack/react-query';
 import { Alert, Button, Card, Form, Input, Result, Typography } from 'antd';
 import { SafetyCertificateTwoTone } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { onboardingApi, type OnboardRequest } from '../api/endpoints';
+import { config } from '../config';
 
 const { Title, Paragraph, Text } = Typography;
+
+/**
+ * Turn a failed signup into something actionable.
+ *
+ * This used to be a single hardcoded "that organization id may already be taken", which masked every
+ * other failure mode. It was actively misleading: onboarding answers a neutral 202 even for an
+ * existing org (M-core-2, so the endpoint is not a tenant-existence oracle), so a duplicate id is in
+ * fact the one thing that never lands here. The failure that did land here was a blocked request —
+ * when the console's CSP `connect-src` omits the gateway origin the browser refuses the call before
+ * sending it, so there is no response, no CORS message and no server-side log line to go on.
+ */
+function signupErrorDescription(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    if (!error.response) {
+      return `Could not reach the API at ${config.apiBase}. Check that the edge gateway is up, and that this console was built with that origin in its Content-Security-Policy connect-src — the browser console will show a CSP or CORS error if it was blocked.`;
+    }
+    const body = error.response.data as { detail?: string; message?: string; error?: string } | undefined;
+    const detail = body?.detail ?? body?.message ?? body?.error;
+    return detail ?? `The server rejected the request (HTTP ${error.response.status}).`;
+  }
+  return 'Unexpected error while creating the organization. Please try again.';
+}
 
 /** Public onboarding page: create a new organization and its first admin, then sign in. */
 export function SignUp() {
@@ -67,7 +91,7 @@ export function SignUp() {
                   showIcon
                   style={{ marginBottom: 16 }}
                   message="Could not create organization"
-                  description="That organization id may already be taken. Try another."
+                  description={signupErrorDescription(signup.error)}
                 />
               )}
 

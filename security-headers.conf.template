@@ -1,0 +1,33 @@
+# Shared security headers for the admin console.
+#
+# nginx `add_header` inheritance is all-or-nothing: a `location` that declares ANY `add_header`
+# of its own stops inheriting the server-level ones. Every `location` that sets Cache-Control
+# therefore `include`s this file so the security headers are re-asserted there and never silently
+# dropped on the HTML shell / SPA fallback (see security review H12).
+#
+# THIS IS A TEMPLATE. The Dockerfile renders it into /etc/nginx/security-headers.conf at BUILD
+# time, substituting @@CSP_CONNECT_SRC@@ / @@CSP_FRAME_SRC@@ from the same VITE_API_BASE and
+# VITE_OIDC_AUTHORITY build args that Vite bakes into the bundle. Rendering at build time (rather
+# than container start) is deliberate: the pod runs with readOnlyRootFilesystem=true, so /etc/nginx
+# is not writable at runtime — and tying the policy to the build args makes it impossible for the
+# CSP allowlist to drift from the origins the app actually calls.
+
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header Referrer-Policy "no-referrer" always;
+
+# HSTS: TLS is terminated upstream (ingress/CDN); the header is forwarded to the browser so it
+# pins HTTPS and blocks SSL-stripping. Harmless over the container's plain-HTTP :8080 hop.
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+# Content-Security-Policy — primary mitigation for token/data exfiltration via injected script.
+#
+#   connect-src : the console's XHR/fetch targets — the edge gateway (VITE_API_BASE) and the OIDC
+#                 authority (VITE_OIDC_AUTHORITY). Rendered from the build args; an origin missing
+#                 here means the browser blocks the call before it is ever sent (no server-side log
+#                 line at all), which is exactly how the placeholder-origin build broke signup.
+#   frame-src   : oidc-client-ts `automaticSilentRenew` refreshes the token in a hidden iframe
+#                 pointed at the authority. Without this, `default-src 'self'` blocks the renew and
+#                 the session dies at token expiry.
+#   style-src   : 'unsafe-inline' because Ant Design injects inline styles at runtime.
+add_header Content-Security-Policy "default-src 'self'; script-src 'self'; connect-src 'self' @@CSP_CONNECT_SRC@@; frame-src 'self' @@CSP_FRAME_SRC@@; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" always;
