@@ -30,10 +30,30 @@ ENV VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY \
     VITE_API_BASE=$VITE_API_BASE
 RUN npm run build
 
+# Render the CSP from the SAME origins Vite just baked into the bundle, so the allowlist can never
+# drift from the endpoints the app actually calls. The previous hand-maintained placeholder origins
+# (https://REPLACE-with-...) blocked every API call in every environment: the browser refuses the
+# cross-origin XHR before sending it, so the failure produced no server-side log line and surfaced
+# in the UI as a misleading "organization id may already be taken".
+RUN set -eu; \
+    origin_of() { printf '%s' "$1" | sed -E 's#^([a-zA-Z][a-zA-Z0-9+.-]*://[^/]+).*#\1#'; }; \
+    API_ORIGIN="$(origin_of "$VITE_API_BASE")"; \
+    OIDC_ORIGIN="$(origin_of "$VITE_OIDC_AUTHORITY")"; \
+    if [ -z "$API_ORIGIN" ] || [ -z "$OIDC_ORIGIN" ]; then \
+      echo "ERROR: cannot derive CSP origins from VITE_API_BASE='$VITE_API_BASE' / VITE_OIDC_AUTHORITY='$VITE_OIDC_AUTHORITY'." >&2; exit 1; \
+    fi; \
+    if [ "$API_ORIGIN" = "$OIDC_ORIGIN" ]; then CONNECT_SRC="$API_ORIGIN"; else CONNECT_SRC="$API_ORIGIN $OIDC_ORIGIN"; fi; \
+    sed -e "s#@@CSP_CONNECT_SRC@@#$CONNECT_SRC#" \
+        -e "s#@@CSP_FRAME_SRC@@#$OIDC_ORIGIN#" \
+        security-headers.conf.template > security-headers.conf; \
+    if grep -q '@@' security-headers.conf; then echo "ERROR: unsubstituted CSP placeholder remains." >&2; exit 1; fi; \
+    echo "CSP connect-src: 'self' $CONNECT_SRC"
+
 # Unprivileged nginx: runs as uid 101 (non-root) and listens on 8080, so no root and no privileged port.
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY security-headers.conf /etc/nginx/security-headers.conf
+# Rendered in the build stage from the Vite origins (see above) — not the raw template.
+COPY --from=build /app/security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=6 \
